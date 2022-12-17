@@ -7,13 +7,14 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-use std::fmt;
-use std::rc::Rc;
+use alloc::rc::Rc;
+use alloc::vec::Vec;
+use core::fmt;
 
 use super::pair::{self, Pair};
 use super::queueable_token::QueueableToken;
 use super::tokens::{self, Tokens};
-use RuleType;
+use crate::RuleType;
 
 /// An iterator over [`Pair`]s. It is created by [`Pairs::flatten`].
 ///
@@ -37,7 +38,7 @@ pub unsafe fn new<R: RuleType>(
     input: &str,
     start: usize,
     end: usize,
-) -> FlatPairs<R> {
+) -> FlatPairs<'_, R> {
     FlatPairs {
         queue,
         input,
@@ -129,7 +130,7 @@ impl<'i, R: RuleType> DoubleEndedIterator for FlatPairs<'i, R> {
 }
 
 impl<'i, R: RuleType> fmt::Debug for FlatPairs<'i, R> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("FlatPairs")
             .field("pairs", &self.clone().collect::<Vec<_>>())
             .finish()
@@ -151,6 +152,8 @@ impl<'i, R: Clone> Clone for FlatPairs<'i, R> {
 mod tests {
     use super::super::super::macros::tests::*;
     use super::super::super::Parser;
+    use alloc::vec;
+    use alloc::vec::Vec;
 
     #[test]
     fn iter_for_flat_pairs() {
