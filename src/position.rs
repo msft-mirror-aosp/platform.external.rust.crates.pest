@@ -116,6 +116,9 @@ impl<'i> Position<'i> {
 
     /// Returns the line and column number of this `Position`.
     ///
+    /// This is an O(n) operation, where n is the number of chars in the input.
+    /// You better use [`pair.line_col()`](struct.Pair.html#method.line_col) instead.
+    ///
     /// # Examples
     ///
     /// ```
@@ -135,14 +138,8 @@ impl<'i> Position<'i> {
         if self.pos > self.input.len() {
             panic!("position out of bounds");
         }
-        #[cfg(feature = "fast-line-col")]
-        {
-            fast_line_col(self.input, self.pos)
-        }
-        #[cfg(not(feature = "fast-line-col"))]
-        {
-            original_line_col(self.input, self.pos)
-        }
+
+        line_col(self.input, self.pos, (1, 1))
     }
 
     /// Returns the entire line of the input that contains this `Position`.
@@ -455,14 +452,30 @@ impl<'i> Hash for Position<'i> {
     }
 }
 
+/// Returns the line and column of the given `pos` in `input`.
+pub(crate) fn line_col(input: &str, pos: usize, start: (usize, usize)) -> (usize, usize) {
+    #[cfg(feature = "fast-line-col")]
+    {
+        fast_line_col(input, pos, start)
+    }
+    #[cfg(not(feature = "fast-line-col"))]
+    {
+        original_line_col(input, pos, start)
+    }
+}
+
 #[inline]
 #[cfg(not(feature = "fast-line-col"))]
-fn original_line_col(input: &str, mut pos: usize) -> (usize, usize) {
+pub(crate) fn original_line_col(
+    input: &str,
+    mut pos: usize,
+    start: (usize, usize),
+) -> (usize, usize) {
     // Position's pos is always a UTF-8 border.
     let slice = &input[..pos];
     let mut chars = slice.chars().peekable();
 
-    let mut line_col = (1, 1);
+    let mut line_col = start;
 
     while pos != 0 {
         match chars.next() {
@@ -499,16 +512,16 @@ fn original_line_col(input: &str, mut pos: usize) -> (usize, usize) {
 
 #[inline]
 #[cfg(feature = "fast-line-col")]
-fn fast_line_col(input: &str, pos: usize) -> (usize, usize) {
+fn fast_line_col(input: &str, pos: usize, start: (usize, usize)) -> (usize, usize) {
     // Position's pos is always a UTF-8 border.
     let slice = &input[..pos];
 
     let prec_ln = memchr::memrchr(b'\n', slice.as_bytes());
     if let Some(prec_nl_pos) = prec_ln {
-        let lines = bytecount::count(slice[..=prec_nl_pos].as_bytes(), b'\n') + 1;
+        let lines = bytecount::count(slice[..=prec_nl_pos].as_bytes(), b'\n') + start.0;
         (lines, slice[prec_nl_pos..].chars().count())
     } else {
-        (1, slice.chars().count() + 1)
+        (start.0, slice.chars().count() + start.1)
     }
 }
 
