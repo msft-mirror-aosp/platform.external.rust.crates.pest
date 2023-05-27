@@ -41,7 +41,7 @@ rust_library_host {
     name: "libpest",
     crate_name: "pest",
     cargo_env_compat: true,
-    cargo_pkg_version: "2.5.5",
+    cargo_pkg_version: "2.5.6",
     srcs: ["src/lib.rs"],
     edition: "2021",
     features: [
@@ -54,4 +54,6 @@ rust_library_host {
         "libucd_trie",
     ],
     compile_multilib: "first",
+    product_available: true,
+    vendor_available: true,
 }

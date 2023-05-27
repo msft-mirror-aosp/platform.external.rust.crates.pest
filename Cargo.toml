@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.56"
 name = "pest"
-version = "2.5.5"
+version = "2.5.6"
 authors = ["Dragoș Tiselice <dragostiselice@gmail.com>"]
 description = "The Elegant Parser"
 homepage = "https://pest.rs/"
