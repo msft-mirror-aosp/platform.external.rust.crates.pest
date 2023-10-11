@@ -54,6 +54,4 @@ rust_library_host {
         "libucd_trie",
     ],
     compile_multilib: "first",
-    product_available: true,
-    vendor_available: true,
 }
