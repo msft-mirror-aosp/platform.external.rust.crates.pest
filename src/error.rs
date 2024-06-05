@@ -74,6 +74,19 @@ pub enum LineColLocation {
     Span((usize, usize), (usize, usize)),
 }
 
+impl From<Position<'_>> for LineColLocation {
+    fn from(value: Position<'_>) -> Self {
+        Self::Pos(value.line_col())
+    }
+}
+
+impl From<Span<'_>> for LineColLocation {
+    fn from(value: Span<'_>) -> Self {
+        let (start, end) = value.split();
+        Self::Span(start.line_col(), end.line_col())
+    }
+}
+
 impl<R: RuleType> Error<R> {
     /// Creates `Error` from `ErrorVariant` and `Position`.
     ///
@@ -418,7 +431,7 @@ impl<R: RuleType> Error<R> {
             .unwrap_or_default();
 
         let pair = (self.line_col.clone(), &self.continued_line);
-        if let (LineColLocation::Span(_, end), &Some(ref continued_line)) = pair {
+        if let (LineColLocation::Span(_, end), Some(ref continued_line)) = pair {
             let has_line_gap = end.0 - self.start().0 > 1;
             if has_line_gap {
                 format!(
@@ -557,13 +570,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 2:2",
                 "  |",
                 "2 | cd",
                 "  |  ^---",
                 "  |",
-                "  = unexpected 4, 5, or 6; expected 1, 2, or 3",
+                "  = unexpected 4, 5, or 6; expected 1, 2, or 3"
             ]
             .join("\n")
         );
@@ -583,13 +596,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 2:2",
                 "  |",
                 "2 | cd",
                 "  |  ^---",
                 "  |",
-                "  = expected 1 or 2",
+                "  = expected 1 or 2"
             ]
             .join("\n")
         );
@@ -609,13 +622,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 2:2",
                 "  |",
                 "2 | cd",
                 "  |  ^---",
                 "  |",
-                "  = unexpected 4, 5, or 6",
+                "  = unexpected 4, 5, or 6"
             ]
             .join("\n")
         );
@@ -635,13 +648,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 2:2",
                 "  |",
                 "2 | cd",
                 "  |  ^---",
                 "  |",
-                "  = unknown parsing error",
+                "  = unknown parsing error"
             ]
             .join("\n")
         );
@@ -660,13 +673,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 2:2",
                 "  |",
                 "2 | cd",
                 "  |  ^---",
                 "  |",
-                "  = error: big one",
+                "  = error: big one"
             ]
             .join("\n")
         );
@@ -686,14 +699,14 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 2:2",
                 "  |",
                 "2 | cd",
                 "3 | efgh",
                 "  |  ^^",
                 "  |",
-                "  = error: big one",
+                "  = error: big one"
             ]
             .join("\n")
         );
@@ -713,7 +726,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 1:2",
                 "  |",
                 "1 | ab",
@@ -721,7 +734,7 @@ mod tests {
                 "3 | efgh",
                 "  |  ^^",
                 "  |",
-                "  = error: big one",
+                "  = error: big one"
             ]
             .join("\n")
         );
@@ -741,14 +754,14 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 1:6",
                 "  |",
                 "1 | abcdef",
                 "2 | gh",
                 "  | ^----^",
                 "  |",
-                "  = error: big one",
+                "  = error: big one"
             ]
             .join("\n")
         );
@@ -771,13 +784,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 1:1",
                 "  |",
                 "1 | abcdef␊",
                 "  | ^-----^",
                 "  |",
-                "  = error: big one",
+                "  = error: big one"
             ]
             .join("\n")
         );
@@ -800,13 +813,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 1:1",
                 "  |",
                 "1 | ",
                 "  | ^",
                 "  |",
-                "  = error: empty",
+                "  = error: empty"
             ]
             .join("\n")
         );
@@ -827,13 +840,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> 2:2",
                 "  |",
                 "2 | cd",
                 "  |  ^---",
                 "  |",
-                "  = unexpected 5, 6, or 7; expected 2, 3, or 4",
+                "  = unexpected 5, 6, or 7; expected 2, 3, or 4"
             ]
             .join("\n")
         );
@@ -854,13 +867,13 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> file.rs:2:2",
                 "  |",
                 "2 | cd",
                 "  |  ^---",
                 "  |",
-                "  = unexpected 4, 5, or 6; expected 1, 2, or 3",
+                "  = unexpected 4, 5, or 6; expected 1, 2, or 3"
             ]
             .join("\n")
         );
@@ -881,15 +894,37 @@ mod tests {
 
         assert_eq!(
             format!("{}", error),
-            vec![
+            [
                 " --> file.rs:1:3",
                 "  |",
                 "1 | a	xbc",
                 "  |  	^---",
                 "  |",
-                "  = unexpected 4, 5, or 6; expected 1, 2, or 3",
+                "  = unexpected 4, 5, or 6; expected 1, 2, or 3"
             ]
             .join("\n")
+        );
+    }
+
+    #[test]
+    fn pos_to_lcl_conversion() {
+        let input = "input";
+
+        let pos = Position::new(input, 2).unwrap();
+
+        assert_eq!(LineColLocation::Pos(pos.line_col()), pos.into());
+    }
+
+    #[test]
+    fn span_to_lcl_conversion() {
+        let input = "input";
+
+        let span = Span::new(input, 2, 4).unwrap();
+        let (start, end) = span.split();
+
+        assert_eq!(
+            LineColLocation::Span(start.line_col(), end.line_col()),
+            span.into()
         );
     }
 }
